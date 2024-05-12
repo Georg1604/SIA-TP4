@@ -11,7 +11,7 @@ class SOM:
         self.weights = np.random.rand(x, y, input_len)
 
     def random_weights_init(self, data):
-        """Initializes the weights of the SOM picking random samples from data"""
+        """ Initializes the weights of the SOM picking random samples from data"""
 
         # Ensure enough data points for initialization
         if len(data) < self.x * self.y:
@@ -72,24 +72,24 @@ class SOM:
         return um
 
     def get_weights(self):
-        """Returns the weights of the neural network"""
+        """ Returns the weights of the neural network"""
         return self.weights.copy()
 
 class Oja:
     def __init__(self, input_dim, learning_rate):
-        """Initializes the Oja network."""
+        """ Initializes the Oja network."""
         self.weights = np.random.rand(input_dim)
         self.learning_rate = learning_rate
 
     def train(self, data, iterations):
-        """Trains the Oja network using the learning rule."""
+        """ Trains the Oja network using the learning rule."""
         for _ in range(iterations):
             for x in data:
                 y = np.dot(x, self.weights)
                 self.weights += self.learning_rate * y * (x - y * self.weights)
 
     def get_weights(self):
-        """Returns the weights of the Oja network."""
+        """ Returns the weights of the Oja network."""
         return self.weights.copy()
 
 # weight_new = weight_old + learning_rate * output * (input - output * weight_old)

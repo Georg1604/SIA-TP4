@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from funciones import SOM, Oja
 from collections import defaultdict
-# from minisom import MiniSom # :((
+from minisom import MiniSom # :((
 
 # Load dataset with specified data types
 dtypes = {'Country': 'str', 
@@ -28,6 +28,7 @@ df_numeric = df.drop('Country', axis=1)
 # Normalize numerical data
 df_numeric = (df_numeric - df_numeric.mean()) / df_numeric.std()
 
+
 ############ Ejercicio 1.1 - Red de Kohonen ############
 """ Self-Organizing Map (SOM) / Kohonen map """
 # Define SOM parameters
@@ -38,12 +39,13 @@ sigma = 1.0 # Neighbourhood radius
 learning_rate = 0.5
 
 # Create SOM
-som = SOM(x, y, input_len, sigma, learning_rate) # create SOM
+som = MiniSom(x, y, input_len, sigma, learning_rate) # create SOM
 som.random_weights_init(df_numeric.values) # initial random weights
 
 # Train SOM
 iterations = 10000
 som.train_random(df_numeric.values, iterations)
+
 
 """ Unified Distance Matrix  (U-Matrix) """
 # Plot U-Matrix of the SOM
@@ -51,6 +53,7 @@ plt.pcolor(som.distance_map().T, cmap='coolwarm') # https://matplotlib.org/stabl
 plt.colorbar()
 plt.title('U-Matrix: Average Distances Between Neurons')
 plt.show()
+
 
 """ Winning neuron. Elements assigned to each neuron """
 ## Calculate element counts for each neuron
@@ -84,6 +87,7 @@ ax.set_title('Element-Count per Neuron')
 plt.colorbar()
 plt.show()
 
+
 """ Categorization of countries """
 # Initialize plot
 fig, ax = plt.subplots()
@@ -102,6 +106,7 @@ ax.set_title('Country distribution')
 plt.colorbar()
 plt.show()
 
+
 ############ Ejercicio 1.2 - Modelo de Oja ############
 """ Modelo de Oja """
 # Oja's Rule
@@ -115,8 +120,34 @@ oja.train(df_numeric.values, iterations)
 # Get the first principal component from Oja's rule
 oja_weights = oja.get_weights()
 
-# Print results along with their respective features
+
+""" PC1 coefficients of attributes - print """
+# Create a dictionary to associate features with coefficients
 feature_names = df_numeric.columns
-for feature, coefficient in zip(feature_names, oja_weights):
-    print(f"{feature}: {coefficient:.4f}")
-#print("First Principal Component:", oja_weights)
+feature_coef_dict = dict(zip(feature_names, oja_weights))
+
+# Sort the dictionary by coefficient values high to low
+sorted_features = sorted(feature_coef_dict.items(), key=lambda item: item[1], reverse=True)
+
+# Print PC1 coefficients along with their respective features in sorted order
+print("\nPC1 coefficients of attributes:")
+for feature, coefficient in sorted_features:
+    print(f"{feature}: {coefficient:.2f}")
+
+
+""" PC1 score of countries - print """
+# Project data onto the first principal component
+pc1_scores = df_numeric.dot(oja_weights)
+
+# Create a DataFrame to associate country names with PC1 scores
+result_df = pd.DataFrame({'Country': country_names, 'PC1': pc1_scores})
+result_df_sorted = result_df.sort_values(by='PC1', ascending=False) # sort results high to low PC1 score
+
+# Print unsorted country PC1 score
+#print("\nPC1 score of countries:")
+#print(result_df)
+
+# Print sorted results of PC1 score
+print("\nPC1 value of countries:")
+for index, row in result_df_sorted.iterrows():
+    print(f"{row['Country']}: {row['PC1']:.2f}")
