@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from funciones import SOM, Oja
 from collections import defaultdict
-from minisom import MiniSom # :((
+#from minisom import MiniSom # for comparison l42
 
 # Load dataset with specified data types
 dtypes = {'Country': 'str', 
@@ -39,7 +39,7 @@ sigma = 1.0 # Neighbourhood radius
 learning_rate = 0.5
 
 # Create SOM
-som = MiniSom(x, y, input_len, sigma, learning_rate) # create SOM
+som = SOM(x, y, input_len, sigma, learning_rate) # create SOM
 som.random_weights_init(df_numeric.values) # initial random weights
 
 # Train SOM
