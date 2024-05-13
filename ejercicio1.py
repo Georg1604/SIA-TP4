@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from funciones import SOM, Oja
 from collections import defaultdict
 #from minisom import MiniSom # for comparison l42
+from sklearn.decomposition import PCA
 
 # Load dataset with specified data types
 dtypes = {'Country': 'str', 
@@ -28,8 +29,9 @@ df_numeric = df.drop('Country', axis=1)
 # Normalize numerical data
 df_numeric = (df_numeric - df_numeric.mean()) / df_numeric.std()
 
-
+########################################################
 ############ Ejercicio 1.1 - Red de Kohonen ############
+########################################################
 """ Self-Organizing Map (SOM) / Kohonen map """
 # Define SOM parameters
 x = 5  # Width of map
@@ -106,8 +108,9 @@ ax.set_title('Country distribution')
 plt.colorbar()
 plt.show()
 
-
+#######################################################
 ############ Ejercicio 1.2 - Modelo de Oja ############
+#######################################################
 """ Modelo de Oja """
 # Oja's Rule
 oja_input_len = df_numeric.shape[1]
@@ -149,5 +152,39 @@ result_df_sorted = result_df.sort_values(by='PC1', ascending=False) # sort resul
 
 # Print sorted results of PC1 score
 print("\nPC1 value of countries:")
+for index, row in result_df_sorted.iterrows():
+    print(f"{row['Country']}: {row['PC1']:.2f}")
+
+
+""" PCA with package to compare results """
+# Perform PCA using scikit-learn
+pca = PCA(n_components=1)
+pca.fit(df_numeric)
+
+# Get the first principal component
+first_pc = pca.components_[0]
+
+# Create a dictionary to associate features with coefficients
+feature_coef_dict = dict(zip(df_numeric.columns, first_pc))
+
+# Sort the dictionary by coefficient values in descending order
+sorted_features = sorted(feature_coef_dict.items(), key=lambda item: item[1], reverse=True)
+
+# Print PC1 coefficients along with their respective features in sorted order
+print("\nPC1 coefficients of attributes (with library):")
+for feature, coefficient in sorted_features:
+    print(f"{feature}: {coefficient:.2f}")
+
+# Project the data onto the principal component
+pc1_scores = pca.transform(df_numeric)
+
+# Combine countries and their PC1 scores into a DataFrame
+result_df = pd.DataFrame({'Country': country_names, 'PC1': pc1_scores.squeeze()})  # squeeze() converts to 1D array
+
+# Sort by PC1 in descending order
+result_df_sorted = result_df.sort_values(by='PC1', ascending=False)
+
+# Print the sorted PC1 scores for each country
+print("\nPC1 value of countries (with library):")
 for index, row in result_df_sorted.iterrows():
     print(f"{row['Country']}: {row['PC1']:.2f}")
