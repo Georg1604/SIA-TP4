@@ -58,14 +58,12 @@ noisy_pattern = add_noise(patterns['J'], 0.1)
 plot_pattern(patterns['A'],'A')
 plot_pattern(patterns['B'],'B')
 plot_pattern(patterns['J'],'J')
-# Show the noisy pattern
+
 plot_pattern(noisy_pattern, "Noisy Pattern")
 
-# Implement the Hopfield model
+
 weight_matrix = hopfield_model(patterns)
 
-# Retrieve the pattern using the Hopfield model
 retrieved_pattern = retrieve_pattern(weight_matrix, noisy_pattern)
 
-# Show the retrieved pattern
 plot_pattern(retrieved_pattern, "Retrieved Pattern")
