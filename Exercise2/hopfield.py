@@ -41,6 +41,8 @@ def add_noise(pattern, noise_percentage):
     return noisy_pattern
 
 
+
+
 def hopfield_model(patterns):
     first_pattern = next(iter(patterns.values()))
     num_features = first_pattern.size
@@ -63,26 +65,37 @@ def plot_pattern(pattern, title, epoch=None):
     plt.axis('off')
     plt.show()
 
-def retrieve_pattern(weight_matrix, pattern, max_epochs, plot = True):
+
+def calculate_energy(pattern, weight_matrix):
+    N = len(pattern.flatten())
+    energy = -0.5 * np.dot(pattern.flatten(), np.dot(weight_matrix, pattern.flatten()))
+    return energy
+
+
+
+def retrieve_pattern(weight_matrix, pattern, max_epochs, plot=True):
     epoch = 0
     current_pattern = pattern
     s_history = [current_pattern]
+    energy_history = [calculate_energy(current_pattern, weight_matrix)]
 
     while epoch < max_epochs:
         new_pattern = np.sign(np.dot(weight_matrix, current_pattern.flatten()))
         new_pattern = np.where(new_pattern >= 0, 1, -1).reshape(current_pattern.shape)
         s_history.append(new_pattern)
+        energy_history.append(calculate_energy(new_pattern, weight_matrix))
+
         if plot:
             plot_pattern(new_pattern, "Pattern", epoch)
+
         if len(s_history) > 2 and np.array_equal(s_history[-2], s_history[-1]):
-            #print(f"Converged at epoch {epoch}")
+            # print(f"Converged at epoch {epoch}")
             break
 
         epoch += 1
         current_pattern = new_pattern
 
-    return new_pattern
-
+    return new_pattern, energy_history
 
 def test_hopfield_on_different_letter_number(patterns, noise_percentage, max_epochs, n):
     selected_patterns = select_random_patterns(patterns, n)
@@ -91,7 +104,7 @@ def test_hopfield_on_different_letter_number(patterns, noise_percentage, max_epo
 
     for letter, original_pattern in selected_patterns.items():
         noisy_pattern = add_noise(original_pattern, noise_percentage)
-        retrieved_pattern = retrieve_pattern(weight_matrix, noisy_pattern, max_epochs, plot = False)
+        retrieved_pattern = retrieve_pattern(weight_matrix, noisy_pattern, max_epochs, plot = False)['new_pattern']
 
         if np.array_equal(retrieved_pattern, original_pattern):
             results[letter] = True
