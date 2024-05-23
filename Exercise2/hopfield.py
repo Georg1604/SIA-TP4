@@ -74,7 +74,6 @@ def retrieve_pattern(weight_matrix, pattern, max_epochs, plot = True):
         s_history.append(new_pattern)
         if plot:
             plot_pattern(new_pattern, "Pattern", epoch)
-
         if len(s_history) > 2 and np.array_equal(s_history[-2], s_history[-1]):
             #print(f"Converged at epoch {epoch}")
             break
@@ -84,41 +83,61 @@ def retrieve_pattern(weight_matrix, pattern, max_epochs, plot = True):
 
     return new_pattern
 
-# Define a noisy pattern
 
+def test_hopfield_on_different_letter_number(patterns, noise_percentage, max_epochs, n):
+    selected_patterns = select_random_patterns(patterns, n)
+    weight_matrix = hopfield_model(selected_patterns)
+    results = {}
 
-noisy_pattern = add_noise(patterns['A'], 0.3)
-
-
-
-plot_pattern(noisy_pattern, "Noisy Pattern")
-
-alphabet = read_letters_from_file('letters.txt')
-patterns = select_random_patterns(alphabet,5)
-
-weight_matrix = hopfield_model(patterns)
-
-retrieved_pattern = retrieve_pattern(weight_matrix, noisy_pattern, max_epochs=10)
-
-plot_pattern(retrieved_pattern, "Retrieved Pattern")
-
-
-def test_hopfield_on_alphabet(patterns, noise_percentage, max_epochs):
-    weight_matrix = hopfield_model(patterns)
-
-    for letter, original_pattern in patterns.items():
+    for letter, original_pattern in selected_patterns.items():
         noisy_pattern = add_noise(original_pattern, noise_percentage)
-        retrieved_pattern = retrieve_pattern(weight_matrix, noisy_pattern, max_epochs,False)
-        plot_pattern(retrieved_pattern, f"Retrieved Pattern for {letter}")
+        retrieved_pattern = retrieve_pattern(weight_matrix, noisy_pattern, max_epochs, plot = False)
+
         if np.array_equal(retrieved_pattern, original_pattern):
-            print(f'Letter {letter} was successfully retrieved.')
+            results[letter] = True
         else:
-            print(f'Letter {letter} was not retrieved.')
+            results[letter] = False
+
+    return results
 
 
+patterns = read_letters_from_file('letters.txt')
 # Test Hopfield network on all letters with 30% noise and 10 max epochs
-test_hopfield_on_alphabet(patterns, noise_percentage=0.05, max_epochs=100)
+num_it = 5
+results = []
+for i in range(num_it):
+    results.append(test_hopfield_on_different_letter_number(patterns, noise_percentage=0.1, max_epochs=100,n=9))
+print(results)
 
 
+def average_success_rate(patterns, noise_percentage, max_epochs, iterations):
+    success_rates = []
+    for n in range(1, 27):
+        avg_success_rate = 0
+        for _ in range(iterations):
+            results = test_hopfield_on_different_letter_number(patterns, noise_percentage, max_epochs, n)
+            success_rate = sum(results.values()) / n
+            avg_success_rate += success_rate
+        avg_success_rate /= iterations
+        success_rates.append(avg_success_rate)
+
+    return success_rates
+
+
+# Exemple d'utilisation
+patterns = read_letters_from_file('letters.txt')
+noise_percentage = 0.1
+max_epochs = 10
+iterations = 100
+
+success_rates = average_success_rate(patterns, noise_percentage, max_epochs, iterations)
+
+# Affichage du graphique
+plt.plot(range(1, 27), success_rates, marker='o')
+plt.title('Average Success by number of letters')
+plt.xlabel('Number of letters')
+plt.ylabel('Average Success Rate')
+plt.grid(True)
+plt.show()
 
 
