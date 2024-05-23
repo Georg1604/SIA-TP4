@@ -2,31 +2,48 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
-patterns = {
-    'A': np.array([[ 1, 1, 1, 1, 1],
-                   [ 1,-1,-1,-1, 1],
-                   [ 1, 1, 1, 1, 1],
-                   [ 1,-1,-1,-1, 1],
-                   [ 1,-1,-1,-1, 1]]),
-    'B': np.array([[ 1, 1, 1, 1,-1],
-                   [ 1,-1,-1,-1, 1],
-                   [ 1, 1, 1, 1,-1],
-                   [ 1,-1,-1,-1, 1],
-                   [ 1, 1, 1, 1,-1]]),
-    'J' : np.array([[ 1, 1, 1, 1, 1],
-                    [-1,-1,-1, 1,-1],
-                    [-1,-1,-1, 1,-1],
-                    [1,-1,-1, 1,-1],
-                    [ 1,1 ,1,-1,-1]])
-}
+def read_letters_from_file(file_path):
+    with open(file_path, 'r') as file:
+        content = file.read()
+
+    letters = {}
+    for block in content.strip().split('\n\n'):
+        if block:
+            letter, pattern = block.split('=')
+            letter = letter.strip(':')
+            pattern_lines = pattern.strip().split('\n')
+            matrix = np.array([[1 if char == 'X' else -1 for char in line] for line in pattern_lines])
+            letters[letter] = matrix
+
+    return letters
+
+
+def select_random_patterns(patterns, n):
+    if n > len(patterns):
+        raise ValueError("n is too big to select random patterns")
+
+    selected_items = random.sample(list(patterns.items()), n)
+    selected_patterns = dict(selected_items)
+    return selected_patterns
+# Define patterns
+patterns = read_letters_from_file('letters.txt')
 
 def add_noise(pattern, noise_percentage):
-    noise = np.random.choice([1, -1], size=pattern.shape, p=[1 - noise_percentage, noise_percentage])
-    return np.where(noise == -1, pattern, noise)
+    noisy_pattern = pattern.copy()
+    num_pixels = pattern.size
+    num_noisy_pixels = int(noise_percentage * num_pixels)
+    indices = np.random.choice(num_pixels, num_noisy_pixels, replace=False)
+
+    flat_pattern = noisy_pattern.flatten()
+    flat_pattern[indices] *= -1  # Inverse the selected pixels
+    noisy_pattern = flat_pattern.reshape(pattern.shape)
+
+    return noisy_pattern
+
 
 def hopfield_model(patterns):
-    num_features = patterns['A'].size
-    num_patterns = len(patterns)
+    first_pattern = next(iter(patterns.values()))
+    num_features = first_pattern.size
     weight_matrix = np.zeros((num_features, num_features))
 
     for pattern in patterns.values():
@@ -37,33 +54,71 @@ def hopfield_model(patterns):
 
     return weight_matrix
 
-def retrieve_pattern(weight_matrix, pattern):
-    while True:
-        new_pattern = np.sign(np.dot(weight_matrix, pattern.flatten()))
-        new_pattern = np.where(new_pattern >= 0, 1, -1).reshape(pattern.shape)
-        if np.array_equal(new_pattern, pattern):
-            break
-        pattern = new_pattern
-    return new_pattern
-
-def plot_pattern(pattern, title):
+def plot_pattern(pattern, title, epoch=None):
     plt.imshow(pattern, cmap='binary', vmin=-1, vmax=1)
-    plt.title(title)
+    if epoch is not None:
+        plt.title(f'{title} (Epoch {epoch})')
+    else:
+        plt.title(title)
     plt.axis('off')
     plt.show()
 
-# Define a noisy pattern
-noisy_pattern = add_noise(patterns['J'], 0.1)
+def retrieve_pattern(weight_matrix, pattern, max_epochs, plot = True):
+    epoch = 0
+    current_pattern = pattern
+    s_history = [current_pattern]
 
-plot_pattern(patterns['A'],'A')
-plot_pattern(patterns['B'],'B')
-plot_pattern(patterns['J'],'J')
+    while epoch < max_epochs:
+        new_pattern = np.sign(np.dot(weight_matrix, current_pattern.flatten()))
+        new_pattern = np.where(new_pattern >= 0, 1, -1).reshape(current_pattern.shape)
+        s_history.append(new_pattern)
+        if plot:
+            plot_pattern(new_pattern, "Pattern", epoch)
+
+        if len(s_history) > 2 and np.array_equal(s_history[-2], s_history[-1]):
+            #print(f"Converged at epoch {epoch}")
+            break
+
+        epoch += 1
+        current_pattern = new_pattern
+
+    return new_pattern
+
+# Define a noisy pattern
+
+
+noisy_pattern = add_noise(patterns['A'], 0.3)
+
+
 
 plot_pattern(noisy_pattern, "Noisy Pattern")
 
+alphabet = read_letters_from_file('letters.txt')
+patterns = select_random_patterns(alphabet,5)
 
 weight_matrix = hopfield_model(patterns)
 
-retrieved_pattern = retrieve_pattern(weight_matrix, noisy_pattern)
+retrieved_pattern = retrieve_pattern(weight_matrix, noisy_pattern, max_epochs=10)
 
 plot_pattern(retrieved_pattern, "Retrieved Pattern")
+
+
+def test_hopfield_on_alphabet(patterns, noise_percentage, max_epochs):
+    weight_matrix = hopfield_model(patterns)
+
+    for letter, original_pattern in patterns.items():
+        noisy_pattern = add_noise(original_pattern, noise_percentage)
+        retrieved_pattern = retrieve_pattern(weight_matrix, noisy_pattern, max_epochs,False)
+        plot_pattern(retrieved_pattern, f"Retrieved Pattern for {letter}")
+        if np.array_equal(retrieved_pattern, original_pattern):
+            print(f'Letter {letter} was successfully retrieved.')
+        else:
+            print(f'Letter {letter} was not retrieved.')
+
+
+# Test Hopfield network on all letters with 30% noise and 10 max epochs
+test_hopfield_on_alphabet(patterns, noise_percentage=0.05, max_epochs=100)
+
+
+
+
