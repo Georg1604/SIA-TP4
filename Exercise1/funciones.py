@@ -1,5 +1,6 @@
 import numpy as np
 
+""" Kohonen map / self-organizing map """
 class SOM:
     def __init__(self, x, y, input_len, sigma, learning_rate):
         """ Initialises Self-Organizing Map (SOM) """
@@ -75,6 +76,7 @@ class SOM:
         """ Returns the weights of the neural network"""
         return self.weights.copy()
 
+""" Modelo de Oja """
 class Oja:
     def __init__(self, input_dim, learning_rate):
         """ Initializes the Oja network."""
@@ -86,6 +88,7 @@ class Oja:
         for _ in range(iterations):
             for x in data:
                 y = np.dot(x, self.weights)
+                # learning_rate = learning_rate / (_ + 1)  # Decreasing learning rate over iterations
                 self.weights += self.learning_rate * y * (x - y * self.weights)
 
     def get_weights(self):
@@ -93,6 +96,3 @@ class Oja:
         return self.weights.copy()
 
 # weight_new = weight_old + learning_rate * output * (input - output * weight_old)
-
-#class Hopfield:
-    #def __init__(self, x):
